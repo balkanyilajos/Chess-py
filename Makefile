@@ -1,2 +1,2 @@
 run:
-	@python chess.py
+	@python main.py
