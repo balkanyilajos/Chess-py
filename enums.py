@@ -11,12 +11,12 @@ class Pieces(Enum):
 
 @unique
 class Players(Enum):
-    PLAYER_1 = 1
-    PLAYER_2 = 2
+    WHITE = 1
+    BLACK = 2
 
     @classmethod
-    def getNextPlayer(self, player: int) -> int:
-        if player == self.PLAYER_1:
-            return self.PLAYER_2
+    def getNextPlayer(self, player: "Players") -> "Players":
+        if player == self.WHITE:
+            return self.BLACK
         else:
-            return self.PLAYER_1
+            return self.WHITE
