@@ -1,1 +1,9 @@
-__all__ = ["bishop", "king", "knight", "pawn", "piece", "queen", "rook"]
+__all__ = [
+    "bishop",
+    "king",
+    "knight",
+    "pawn",
+    "piece",
+    "queen",
+    "rook"
+    ]
