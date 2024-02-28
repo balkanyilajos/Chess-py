@@ -28,6 +28,7 @@ class Chess:
         self.activePiece: piece.Piece = None
         self.actualPlayer: Players = Players.WHITE
         self.showValidMoves: bool = False
+        self.showMousePiece: bool = False
 
         self._start()
 
@@ -48,34 +49,37 @@ class Chess:
         if event.type == pygame.MOUSEBUTTONDOWN:
             coordinate = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
             indexX, indexY = coordinate
+
             if(not self.isTableCellEmpty(*coordinate)
             and self.isPieceOfPlayer(self.getBoardPiece(indexX, indexY).player)):
-                self.activePiece = self.deletePieceFromTable(*coordinate)         
+                self.activePiece = self.deletePieceFromTable(*coordinate)
+                self.showMousePiece = True
 
-        if event.type == pygame.MOUSEBUTTONUP and self.activePiece != None:
-            coordinate = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
-            if(self.activePiece.isMoveable(*coordinate)):
+        if event.type == pygame.MOUSEBUTTONUP:
+            x, y = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
+            if (self.activePiece.isMoveable(x, y)):
                 self.showValidMoves = False
-                self.addPieceToTable(self.activePiece, *coordinate)
+                self.deletePieceFromTable(self.activePiece.x, self.activePiece.y)
+                self.addPieceToTable(self.activePiece, x, y)
                 self.actualPlayer = Players.getNextPlayer(self.actualPlayer)
             else:
-                self.showValidMoves = True
-                self.validMoveSurface.fill((0,0,0,0))
-                self.addPieceToTable(self.activePiece)
-                self._drawValidMoves(self.activePiece)
-                    
-            self.activePiece = None
+                if self.activePiece.hasSamePosition(x, y):
+                    self.showValidMoves = not self.showValidMoves
+                    self.addPieceToTable(self.activePiece)
+
+            self.showMousePiece = False
 
     def _draw(self):
-        if not self.showValidMoves:
-            self.validMoveSurface.fill((0,0,0,0))
         self.screen.fill((0,0,0,0))
         self.mouseSurface.fill((0,0,0,0))
+        if self.showValidMoves:
+            self._drawValidMoves(self.activePiece)
+        else:
+            self.validMoveSurface.fill((0,0,0,0))
 
         self._createBackground()
         self._drawPieces()
-
-        if self.activePiece != None:
+        if self.showMousePiece:
             self._drawGrabbedByMousePiece()
 
         self.boardSurface.blit(self.validMoveSurface, (0, 0))
@@ -112,9 +116,6 @@ class Chess:
 
     def isPieceOfPlayer(self, otherPlayer: Players):
         return otherPlayer == self.actualPlayer
-
-    def isMovingForward(self, piece: piece.Piece, indexY: int) -> bool:
-        return piece.y > indexY if piece.player == Players.WHITE else piece.y < indexY
 
     def isValidCoordinate(self, indexX: int, indexY: int) -> bool:
         return indexX >= 0 and indexX < self.BOARD_SIZE \

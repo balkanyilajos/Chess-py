@@ -62,6 +62,9 @@ class Piece(ABC):
     def isMoveable(self, indexX: int, indexY: int) -> bool:
         return (indexX, indexY) in self.getMoveablePositions()
 
+    def hasSamePosition(self, indexX: int, indexY: int) -> bool:
+        return self._x == indexX and self._y == indexY
+
     @abstractmethod
     def getMoveablePositions(self) -> list[tuple[int, int]]:
         pass
