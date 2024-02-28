@@ -23,7 +23,11 @@ class Bishop(Piece):
         return True
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        return []
+        coords = self._getCoords(1, 1, self._chess.BOARD_SIZE)
+        coords += self._getCoords(-1, -1, self._chess.BOARD_SIZE)
+        coords += self._getCoords(1, -1, self._chess.BOARD_SIZE)
+        coords += self._getCoords(-1, 1, self._chess.BOARD_SIZE)
+        return coords
 
 class BlackBishop(Bishop):
     def __init__(self, chess: Chess, x: int, y: int, size: int):

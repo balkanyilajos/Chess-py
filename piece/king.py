@@ -22,7 +22,15 @@ class King(Piece):
         return diffX in (1, 0) and diffY in (1, 0)
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        return []
+        coords = self._getCoords(1, 0, 1)
+        coords += self._getCoords(-1, 0, 1)
+        coords += self._getCoords(0, 1, 1)
+        coords += self._getCoords(0, -1, 1)
+        coords += self._getCoords(1, 1, 1)
+        coords += self._getCoords(-1, -1, 1)
+        coords += self._getCoords(1, -1, 1)
+        coords += self._getCoords(-1, 1, 1)
+        return coords
 
 class BlackKing(King):
     def __init__(self, chess: Chess, x: int, y: int, size: int):

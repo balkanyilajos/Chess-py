@@ -19,7 +19,11 @@ class Rook(Piece):
         return True
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        return []
+        coords = self._getCoords(1, 0, self._chess.BOARD_SIZE)
+        coords += self._getCoords(-1, 0, self._chess.BOARD_SIZE)
+        coords += self._getCoords(0, 1, self._chess.BOARD_SIZE)
+        coords += self._getCoords(0, -1, self._chess.BOARD_SIZE)
+        return coords
 
 class BlackRook(Rook):
     def __init__(self, chess: Chess, x: int, y: int, size: int):

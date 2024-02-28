@@ -12,46 +12,57 @@ if TYPE_CHECKING:
 class Pawn(Piece):
     def __init__(self, chess: Chess, x: int, y: int, player: Players, image: pygame.Surface):
         super().__init__(chess, x, y, player, image)
+        self.upCoords = []
+        self.sideCoords = []
 
-    def isMoveable(self, indexX: int, indexY: int) -> bool:
-        if not super().isMoveable(indexX, indexY):
-            return False
-        print(self.getMoveablePositions())
-        diffY = abs(indexY - self._y)
-        diffX = abs(indexX - self._x)
-        returnValue = False
-
-        if self._chess.isMovingForward(self, indexY):
-            if indexX == self._x:
-                if self._isInTheOriginalField and diffY == 2:
-                    returnValue = self._chess.isTableCellEmpty(indexX, indexY-1) and self._chess.isTableCellEmpty(indexX, indexY)
-                else:
-                    returnValue = diffY == 1 and self._chess.isTableCellEmpty(indexX, indexY)
-            elif diffY == 1 and diffX == 1:
-                returnValue = not self._chess.isTableCellEmpty(indexX, indexY)
-        
-        if returnValue:
-            self._isInTheOriginalField = False
-
-        return returnValue
+    @property
+    def x(self) -> int:
+        return self._x
+    
+    @property 
+    def y(self) -> int:
+        return self._y
+    
+    @x.setter
+    def x(self, value):
+        self._isInTheOriginalField = self._isInTheOriginalField and self._x == value
+        self._x = value
+    
+    @y.setter
+    def y(self, value):
+        self._isInTheOriginalField = self._isInTheOriginalField and self._y == value
+        self._y = value
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        points = [(self.x-1, self.y), (self.x+1, self.y), (self.x, self.y-1), (self.x, self.y+1),
-                  (self.x-2, self.y), (self.x+2, self.y), (self.x, self.y-2), (self.x, self.y+2),
-                  (self.x-1, self.y-1), (self.x+1, self.y+1), (self.x+1, self.y-1), (self.x-1, self.y+1)]
-        for i in range(len(points)-1, -1, -1):
-            if not self._chess.isValidCoordinate(*points[i]) \
-               or not self._chess.isMovingForward(self, points[i][1]):
-                del points[i]
-        return points
+        coords = []
+        for x, y in self.upCoords:
+            x += self._x
+            y += self._y
+            if self._chess.isValidCoordinate(x,y):
+                if self._chess.isTableCellEmpty(x,y):
+                   coords.append((x,y))
+                else:
+                    break
+            
+        for x, y in self.sideCoords:
+            x += self._x
+            y += self._y
+            if self._chess.isValidCoordinate(x,y) and not self._chess.isTableCellEmpty(x,y) \
+               and not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x,y).player):
+                coords.append((x,y))
+        
+        return coords
 
 class BlackPawn(Pawn):
     def __init__(self, chess: Chess, x: int, y: int, size: int):
         image = pygame.transform.smoothscale(pygame.image.load(os.path.join("data", "black_pawn.svg")), (size, size))
         super().__init__(chess, x, y, Players.BLACK, image)
-
+        self.upCoords = [(0, 1), (0, 2)]
+        self.sideCoords = [(1, 1), (-1, 1)]
 
 class WhitePawn(Pawn):
     def __init__(self, chess: Chess, x: int, y: int, size: int):
         image = pygame.transform.smoothscale(pygame.image.load(os.path.join("data", "white_pawn.svg")), (size, size))
         super().__init__(chess, x, y, Players.WHITE, image)
+        self.upCoords = [(0, -1), (0, -2)]
+        self.sideCoords = [(1, -1), (-1, -1)]

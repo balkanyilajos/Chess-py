@@ -5,10 +5,9 @@ from piece import *
 
 class Chess:
     SIZE = int(GetSystemMetrics(0) * 0.6) if GetSystemMetrics(0) < GetSystemMetrics(1) else int(GetSystemMetrics(1) * 0.6)
-    NUMBER_OF_CUBES_IN_A_ROW = 8
-    NUMBER_OF_CUBES_IN_A_COLUMN = 8
+    BOARD_SIZE = 8
 
-    CUBE_SIZE = int(SIZE / NUMBER_OF_CUBES_IN_A_ROW)
+    CUBE_SIZE = int(SIZE / BOARD_SIZE)
     CUBE_COLOR_1 = pygame.Color(109, 82, 73, 255)
     CUBE_COLOR_2 = pygame.Color(248, 243, 227, 255)
     VALID_MOVE_COLOR = pygame.Color(158, 158, 158, 200)
@@ -24,8 +23,8 @@ class Chess:
         self.clock = pygame.time.Clock()
         self.running: bool = True
 
-        self.board: piece.Piece = [[None for x in range(self.NUMBER_OF_CUBES_IN_A_ROW)] \
-                                     for y in range(self.NUMBER_OF_CUBES_IN_A_COLUMN)]
+        self.board: piece.Piece = [[None for x in range(self.BOARD_SIZE)] \
+                                     for y in range(self.BOARD_SIZE)]
         self.activePiece: piece.Piece = None
         self.actualPlayer: Players = Players.WHITE
         self.showValidMoves: bool = False
@@ -50,7 +49,7 @@ class Chess:
             coordinate = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
             indexX, indexY = coordinate
             if(not self.isTableCellEmpty(*coordinate)
-            and self.isPieceOfPlayer(self.getBoardPiece(indexX, indexY))):
+            and self.isPieceOfPlayer(self.getBoardPiece(indexX, indexY).player)):
                 self.activePiece = self.deletePieceFromTable(*coordinate)         
 
         if event.type == pygame.MOUSEBUTTONUP and self.activePiece != None:
@@ -102,24 +101,24 @@ class Chess:
         whiteSpecialPieces = [rook.WhiteRook, knight.WhiteKnight, bishop.WhiteBishop, king.WhiteKing, \
                               queen.WhiteQueen, bishop.WhiteBishop, knight.WhiteKnight, rook.WhiteRook]
 
-        for i in range(self.NUMBER_OF_CUBES_IN_A_ROW):
+        for i in range(self.BOARD_SIZE):
             self.addPieceToTable(blackSpecialPieces[i](self, i, 0, self.CUBE_SIZE), i, 0)
             self.addPieceToTable(pawn.BlackPawn(self, i, 1, self.CUBE_SIZE), i, 1)
-            self.addPieceToTable(pawn.WhitePawn(self, i, self.NUMBER_OF_CUBES_IN_A_COLUMN-2, self.CUBE_SIZE), i, self.NUMBER_OF_CUBES_IN_A_COLUMN-2) 
-            self.addPieceToTable(whiteSpecialPieces[i](self, i, self.NUMBER_OF_CUBES_IN_A_COLUMN-1, self.CUBE_SIZE), i, self.NUMBER_OF_CUBES_IN_A_COLUMN-1)
+            self.addPieceToTable(pawn.WhitePawn(self, i, self.BOARD_SIZE-2, self.CUBE_SIZE), i, self.BOARD_SIZE-2) 
+            self.addPieceToTable(whiteSpecialPieces[i](self, i, self.BOARD_SIZE-1, self.CUBE_SIZE), i, self.BOARD_SIZE-1)
 
     def isTableCellEmpty(self, indexX: int, indexY: int) -> bool:
         return self.getBoardPiece(indexX, indexY) == None
 
-    def isPieceOfPlayer(self, otherPlayer: piece.Piece):
-        return otherPlayer.player == self.actualPlayer
+    def isPieceOfPlayer(self, otherPlayer: Players):
+        return otherPlayer == self.actualPlayer
 
     def isMovingForward(self, piece: piece.Piece, indexY: int) -> bool:
         return piece.y > indexY if piece.player == Players.WHITE else piece.y < indexY
 
     def isValidCoordinate(self, indexX: int, indexY: int) -> bool:
-        return indexX >= 0 and indexX < self.NUMBER_OF_CUBES_IN_A_ROW \
-               and indexY >= 0 and indexY < self.NUMBER_OF_CUBES_IN_A_COLUMN
+        return indexX >= 0 and indexX < self.BOARD_SIZE \
+               and indexY >= 0 and indexY < self.BOARD_SIZE
 
     def deletePieceFromTable(self, indexX: int, indexY: int) -> piece.Piece:
         temp = self.getBoardPiece(indexX, indexY)
@@ -139,7 +138,7 @@ class Chess:
         if self.actualPlayer == Players.WHITE:
             yIndex = int(y / self.CUBE_SIZE)
         else:
-            yIndex = self.NUMBER_OF_CUBES_IN_A_ROW - int(y / self.CUBE_SIZE) - 1
+            yIndex = self.BOARD_SIZE - int(y / self.CUBE_SIZE) - 1
         return (int(x / self.CUBE_SIZE), yIndex)
 
     def getBoardPiece(self, indexX, indexY) -> piece.Piece:
@@ -147,23 +146,22 @@ class Chess:
 
     def _getCoordinatesFromIndex(self, indexX: int, indexY: int) -> tuple[float, float]:
         if self.actualPlayer == Players.BLACK:
-            y = (self.NUMBER_OF_CUBES_IN_A_COLUMN-1 - indexY) * self.CUBE_SIZE
+            y = (self.BOARD_SIZE-1 - indexY) * self.CUBE_SIZE
         else:
             y = indexY * self.CUBE_SIZE
         return (indexX * self.CUBE_SIZE, y)
 
     def _drawPieces(self):
-        iterator = range(self.NUMBER_OF_CUBES_IN_A_ROW) if self.actualPlayer == Players.WHITE else range(self.NUMBER_OF_CUBES_IN_A_ROW-1, -1, -1)
+        iterator = range(self.BOARD_SIZE) if self.actualPlayer == Players.WHITE else range(self.BOARD_SIZE-1, -1, -1)
         for y in iterator:
-            for x in range(self.NUMBER_OF_CUBES_IN_A_COLUMN):
+            for x in range(self.BOARD_SIZE):
                 if(not self.isTableCellEmpty(x, y)):
-                    ySize = y*self.CUBE_SIZE if self.actualPlayer == Players.WHITE else (self.NUMBER_OF_CUBES_IN_A_ROW-y-1)*self.CUBE_SIZE
+                    ySize = y*self.CUBE_SIZE if self.actualPlayer == Players.WHITE else (self.BOARD_SIZE-y-1)*self.CUBE_SIZE
                     self.boardSurface.blit(self.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
 
     def _drawValidMoves(self, piece: piece.Piece):
         points = piece.getMoveablePositions()
         for point in points:
-            print(point)
             x, y = self._getCoordinatesFromIndex(*point)
             pygame.draw.rect(self.validMoveSurface, self.VALID_MOVE_COLOR, (x, y, self.CUBE_SIZE, self.CUBE_SIZE))
 

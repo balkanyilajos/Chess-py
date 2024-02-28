@@ -41,16 +41,26 @@ class Piece(ABC):
     def y(self, value):
         self._y = value
 
-    def isPieceInTheSamePosition(self, other: Piece):
-        return self._x == other._x and self._y == other._y
+    def _getCoords(self, directionX: int, directionY: int, maxMove: int):
+        coords = []
+        x = self._x + directionX
+        y = self._y + directionY
+        i = 0
+        while i < maxMove and self._chess.isValidCoordinate(x, y):
+            if self._chess.isTableCellEmpty(x, y):
+                coords.append((x, y))
+            else:
+                if not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x, y).player):
+                    coords.append((x, y))
+                break
+            y += directionY
+            x += directionX
+            i += 1
 
-    def isPieceInTheSamePosition(self, indexX, indexY):
-        return self._x == indexX and self._y == indexY
+        return coords
 
     def isMoveable(self, indexX: int, indexY: int) -> bool:
-        return (self._chess.isTableCellEmpty(indexX, indexY) \
-               or not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(indexX, indexY))) \
-               and not self.isPieceInTheSamePosition(indexX, indexY)
+        return (indexX, indexY) in self.getMoveablePositions()
 
     @abstractmethod
     def getMoveablePositions(self) -> list[tuple[int, int]]:
