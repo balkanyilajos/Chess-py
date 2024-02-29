@@ -57,14 +57,15 @@ class Chess:
 
         if event.type == pygame.MOUSEBUTTONUP:
             x, y = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
-            if (self.activePiece.isMoveable(x, y)):
-                self.showValidMoves = False
-                self.deletePieceFromTable(self.activePiece.x, self.activePiece.y)
-                self.addPieceToTable(self.activePiece, x, y)
-                self.actualPlayer = Players.getNextPlayer(self.actualPlayer)
-            else:
-                if self.activePiece.hasSamePosition(x, y):
-                    self.showValidMoves = not self.showValidMoves
+            if self.activePiece is not None and self.isPieceOfPlayer(self.activePiece.player):
+                if (self.activePiece.isMoveable(x, y)):
+                    self.showValidMoves = False
+                    self.deletePieceFromTable(self.activePiece.x, self.activePiece.y)
+                    self.addPieceToTable(self.activePiece, x, y)
+                    self.actualPlayer = Players.getNextPlayer(self.actualPlayer)
+                else:
+                    if self.activePiece.hasSamePosition(x, y):
+                        self.showValidMoves = not self.showValidMoves
                     self.addPieceToTable(self.activePiece)
 
             self.showMousePiece = False
@@ -130,10 +131,14 @@ class Chess:
         if indexX == None or indexY == None:
             indexX = piece.x
             indexY = piece.y
-
         self.board[indexY][indexX] = piece
         self.board[indexY][indexX].x = indexX
         self.board[indexY][indexX].y = indexY
+
+    def getBoardGenerator(self):
+        for row in self.board:
+            for cell in row:
+                yield cell
 
     def _getIndexFromCoordinate(self, x: float, y: float) -> tuple[int, int]:
         if self.actualPlayer == Players.WHITE:

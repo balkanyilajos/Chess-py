@@ -13,24 +13,23 @@ class King(Piece):
     def __init__(self, chess: Chess, x: int, y: int, player: Players, image: pygame.Surface):
         super().__init__(chess, x, y, player, image)
 
-    def isMoveable(self, indexX: int, indexY: int) -> bool:
-        if not super().isMoveable(indexX, indexY):
-            return False
-        
-        diffX = abs(indexX - self._x)
-        diffY = abs(indexY - self._y)
-        return diffX in (1, 0) and diffY in (1, 0)
+    def _getAdjacentCoords(self) -> set[tuple[int,int]]:
+        return {(1+self._x, 0+self._y), (-1+self._x, 0+self._y), (0+self._x, 1+self._y), (0+self._x, -1+self._y),
+                (1+self._x, 1+self._y), (-1+self._x, -1+self._y), (1+self._x, -1+self._y), (-1+self._x, 1+self._y)}
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        coords = self._getCoords(1, 0, 1)
-        coords += self._getCoords(-1, 0, 1)
-        coords += self._getCoords(0, 1, 1)
-        coords += self._getCoords(0, -1, 1)
-        coords += self._getCoords(1, 1, 1)
-        coords += self._getCoords(-1, -1, 1)
-        coords += self._getCoords(1, -1, 1)
-        coords += self._getCoords(-1, 1, 1)
-        return coords
+        coords = self._getAdjacentCoords()
+        for cell in self._chess.getBoardGenerator():
+            if isinstance(cell, King) and not self._chess.isPieceOfPlayer(cell.player):
+                    coords -= cell._getAdjacentCoords()
+            elif isinstance(cell, Piece):
+                if self._chess.isPieceOfPlayer(cell.player):
+                    coords.discard((cell.x, cell.y))
+                else:
+                    for coord in cell.getMoveablePositions():
+                        coords.discard(coord) 
+
+        return list(coords)
 
 class BlackKing(King):
     def __init__(self, chess: Chess, x: int, y: int, size: int):

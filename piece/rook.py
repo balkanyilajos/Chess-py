@@ -13,11 +13,6 @@ class Rook(Piece):
     def __init__(self, chess: Chess, x: int, y: int, player: Players, image: pygame.Surface):
         super().__init__(chess, x, y, player, image)
 
-    def isMoveable(self, indexX: int, indexY: int) -> bool:
-        if not super().isMoveable(indexX, indexY):
-            return False
-        return True
-
     def getMoveablePositions(self) -> list[tuple[int, int]]:
         coords = self._getCoords(1, 0, self._chess.BOARD_SIZE)
         coords += self._getCoords(-1, 0, self._chess.BOARD_SIZE)
