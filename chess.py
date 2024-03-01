@@ -127,18 +127,20 @@ class Chess:
         self.board[indexY][indexX] = None
         return temp
 
-    def addPieceToTable(self, piece: piece.Piece, indexX: int = None, indexY: int = None):
+    def addPieceToTable(self, piece: piece.Piece, indexX: int = None, indexY: int = None, modifyCoordsInPiece: bool = True):
         if indexX == None or indexY == None:
             indexX = piece.x
             indexY = piece.y
         self.board[indexY][indexX] = piece
-        self.board[indexY][indexX].x = indexX
-        self.board[indexY][indexX].y = indexY
+        if modifyCoordsInPiece:
+            self.board[indexY][indexX].x = indexX
+            self.board[indexY][indexX].y = indexY
 
     def getBoardGenerator(self):
         for row in self.board:
             for cell in row:
-                yield cell
+                if isinstance(cell, piece.Piece):
+                    yield cell
 
     def _getIndexFromCoordinate(self, x: float, y: float) -> tuple[int, int]:
         if self.actualPlayer == Players.WHITE:
@@ -158,11 +160,11 @@ class Chess:
         return (indexX * self.CUBE_SIZE, y)
 
     def _drawPieces(self):
-        iterator = range(self.BOARD_SIZE) if self.actualPlayer == Players.WHITE else range(self.BOARD_SIZE-1, -1, -1)
+        iterator = range(self.BOARD_SIZE) if self.isPieceOfPlayer(Players.WHITE) else range(self.BOARD_SIZE-1, -1, -1)
         for y in iterator:
             for x in range(self.BOARD_SIZE):
                 if(not self.isTableCellEmpty(x, y)):
-                    ySize = y*self.CUBE_SIZE if self.actualPlayer == Players.WHITE else (self.BOARD_SIZE-y-1)*self.CUBE_SIZE
+                    ySize = y*self.CUBE_SIZE if self.isPieceOfPlayer(Players.WHITE) else (self.BOARD_SIZE-y-1)*self.CUBE_SIZE
                     self.boardSurface.blit(self.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
 
     def _drawValidMoves(self, piece: piece.Piece):

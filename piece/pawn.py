@@ -25,12 +25,16 @@ class Pawn(Piece):
     
     @x.setter
     def x(self, value):
-        self._isInTheOriginalField = self._isInTheOriginalField and self._x == value
+        if self._isInTheOriginalField and self._x != value:
+             self._isInTheOriginalField = False
+             self.upCoords.pop()
         self._x = value
     
     @y.setter
     def y(self, value):
-        self._isInTheOriginalField = self._isInTheOriginalField and self._y == value
+        if self._isInTheOriginalField and self._y != value:
+             self._isInTheOriginalField = False
+             self.upCoords.pop()
         self._y = value
 
     def getMoveablePositions(self) -> list[tuple[int, int]]:
@@ -47,6 +51,7 @@ class Pawn(Piece):
         for x, y in self.sideCoords:
             x += self._x
             y += self._y
+
             if self._chess.isValidCoordinate(x,y) and not self._chess.isTableCellEmpty(x,y) \
                and not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x,y).player):
                 coords.append((x,y))
