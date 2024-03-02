@@ -51,13 +51,13 @@ class Chess:
             indexX, indexY = coordinate
 
             if(not self.isTableCellEmpty(*coordinate)
-            and self.isPieceOfPlayer(self.getBoardPiece(indexX, indexY).player)):
+            and self.isRoundOfCurrentPlayer(self.getBoardPiece(indexX, indexY).player)):
                 self.activePiece = self.deletePieceFromTable(*coordinate)
                 self.showMousePiece = True
 
         if event.type == pygame.MOUSEBUTTONUP:
             x, y = self._getIndexFromCoordinate(*pygame.mouse.get_pos())
-            if self.activePiece is not None and self.isPieceOfPlayer(self.activePiece.player):
+            if self.activePiece is not None and self.isRoundOfCurrentPlayer(self.activePiece.player):
                 if (self.activePiece.isMoveable(x, y)):
                     self.showValidMoves = False
                     self.deletePieceFromTable(self.activePiece.x, self.activePiece.y)
@@ -115,7 +115,7 @@ class Chess:
     def isTableCellEmpty(self, indexX: int, indexY: int) -> bool:
         return self.getBoardPiece(indexX, indexY) == None
 
-    def isPieceOfPlayer(self, otherPlayer: Players):
+    def isRoundOfCurrentPlayer(self, otherPlayer: Players):
         return otherPlayer == self.actualPlayer
 
     def isValidCoordinate(self, indexX: int, indexY: int) -> bool:
@@ -160,11 +160,11 @@ class Chess:
         return (indexX * self.CUBE_SIZE, y)
 
     def _drawPieces(self):
-        iterator = range(self.BOARD_SIZE) if self.isPieceOfPlayer(Players.WHITE) else range(self.BOARD_SIZE-1, -1, -1)
+        iterator = range(self.BOARD_SIZE) if self.isRoundOfCurrentPlayer(Players.WHITE) else range(self.BOARD_SIZE-1, -1, -1)
         for y in iterator:
             for x in range(self.BOARD_SIZE):
                 if(not self.isTableCellEmpty(x, y)):
-                    ySize = y*self.CUBE_SIZE if self.isPieceOfPlayer(Players.WHITE) else (self.BOARD_SIZE-y-1)*self.CUBE_SIZE
+                    ySize = y*self.CUBE_SIZE if self.isRoundOfCurrentPlayer(Players.WHITE) else (self.BOARD_SIZE-y-1)*self.CUBE_SIZE
                     self.boardSurface.blit(self.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
 
     def _drawValidMoves(self, piece: piece.Piece):

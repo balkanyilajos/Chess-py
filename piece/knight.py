@@ -20,7 +20,7 @@ class Knight(Piece):
             x += self._x
             y += self._y
             if self._chess.isValidCoordinate(x,y) and (self._chess.isTableCellEmpty(x,y) \
-               or not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x,y).player)):
+               or not self._chess.isRoundOfCurrentPlayer(self._chess.getBoardPiece(x,y).player)):
                 coords.append((x,y))
 
         return coords

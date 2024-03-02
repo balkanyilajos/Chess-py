@@ -42,18 +42,14 @@ class Pawn(Piece):
         for x, y in self.upCoords:
             x += self._x
             y += self._y
-            if self._chess.isValidCoordinate(x,y):
-                if self._chess.isTableCellEmpty(x,y):
-                   coords.append((x,y))
-                else:
-                    break
+            if self._chess.isValidCoordinate(x,y) and self._chess.isTableCellEmpty(x,y):
+                coords.append((x,y))
             
         for x, y in self.sideCoords:
             x += self._x
             y += self._y
-
             if self._chess.isValidCoordinate(x,y) and not self._chess.isTableCellEmpty(x,y) \
-               and not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x,y).player):
+               and not self.isOwnedBySamePlayer(self._chess.getBoardPiece(x,y)):
                 coords.append((x,y))
         
         return coords

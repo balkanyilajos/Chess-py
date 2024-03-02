@@ -20,42 +20,39 @@ class King(Piece):
     def getMoveablePositions(self) -> list[tuple[int, int]]:
         coords = self._getAdjacentCoords()
         counter = 0
-        for x, y in reversed(coords):
+        for i in range(len(coords)-1, -1, -1):
+            coord = coords[i]
+            x, y = coord
             isKingAddedToBoard = False
+            # adds kings to empty cells
             if self._chess.isValidCoordinate(x, y):
                 if self._chess.isTableCellEmpty(x, y):
                     self._chess.addPieceToTable(King(self._chess, x, y, self._player, self._image), x, y, modifyCoordsInPiece=False)
                     isKingAddedToBoard = True
             else:
-                coords.remove((x,y))
+                del coords[i]
                 continue
-                
-            #print(self._chess.isTableCellEmpty(x,y), x, y)
+            
+            #checks if it can be stepped
             for piece in self._chess.getBoardGenerator():
                 if isinstance(piece, King):
-                    if not self._chess.isPieceOfPlayer(piece.player) and \
-                    abs(piece.x-x) == 0 and abs(piece.y-y) == 0:
-                        coords.remove((x, y))
+                    if not self.isOwnedBySamePlayer(piece) and \
+                    abs(piece.x-x) <= 1 and abs(piece.y-y) <= 1:
+                        del coords[i]
+                        break
                 else:
-                    if self._chess.isPieceOfPlayer(piece.player):
+                    if self.isOwnedBySamePlayer(piece):
                         if abs(piece.x-x) == 0 and abs(piece.y-y) == 0:
-                            coords.remove((x, y))
+                            del coords[i]
+                            break
                     elif piece.isMoveable(x, y):
-                        coords.remove((x, y))
-            
+                        del coords[i]
+                        break
+                        
+            # removes kings from empty cells
             if isKingAddedToBoard:
                 self._chess.deletePieceFromTable(x, y)
                 counter += 1
-
-        # for cell in self._chess.getBoardGenerator():
-        #     if isinstance(cell, King) and not self._chess.isPieceOfPlayer(cell.player):
-        #             coords -= cell._getAdjacentCoords()
-        #     elif isinstance(cell, Piece):
-        #         if self._chess.isPieceOfPlayer(cell.player):
-        #             coords.discard((cell.x, cell.y))
-        #         else:
-        #             for coord in cell.getMoveablePositions():
-        #                 coords.discard(coord) 
 
         return coords
 

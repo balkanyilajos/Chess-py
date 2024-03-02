@@ -50,7 +50,7 @@ class Piece(ABC):
             if self._chess.isTableCellEmpty(x, y):
                 coords.append((x, y))
             else:
-                if not self._chess.isPieceOfPlayer(self._chess.getBoardPiece(x, y).player):
+                if not self.isOwnedBySamePlayer(self._chess.getBoardPiece(x, y)):
                     coords.append((x, y))
                 break
             y += directionY
@@ -61,6 +61,9 @@ class Piece(ABC):
 
     def isMoveable(self, indexX: int, indexY: int) -> bool:
         return (indexX, indexY) in self.getMoveablePositions()
+    
+    def isOwnedBySamePlayer(self, other: Piece):
+        return self._player == other._player 
 
     def hasSamePosition(self, indexX: int, indexY: int) -> bool:
         return self._x == indexX and self._y == indexY
