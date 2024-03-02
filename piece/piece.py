@@ -1,21 +1,22 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from abc import ABC, abstractmethod
+from abc import ABC
 import pygame
 
 from enums import Players
 
 if TYPE_CHECKING:
-     from chess import Chess
+     from chess import Board
 
 class Piece(ABC):
-    def __init__(self, chess: Chess, x: int, y: int, player: Players, image: pygame.Surface) -> None:
-        self._chess = chess
+    def __init__(self, board: Board, x: int, y: int, player: Players, image: pygame.Surface) -> None:
+        self._board = board
         self._x = x
         self._y = y
         self._player = player
         self._image = image
-        self._isInTheOriginalField = True
+        self._canMove = True
+        self._stepableCoordsWhileChecked = []
 
     @property
     def player(self) -> Players:
@@ -26,6 +27,10 @@ class Piece(ABC):
         return self._image
     
     @property
+    def canMove(self) -> bool:
+        return self._canMove
+
+    @property
     def x(self) -> int:
         return self._x
     
@@ -33,6 +38,18 @@ class Piece(ABC):
     def y(self) -> int:
         return self._y
     
+    @property
+    def stepableCoordsWhileChecked(self):
+        return self._stepableCoordsWhileChecked
+    
+    @stepableCoordsWhileChecked.setter
+    def stepableCoordsWhileChecked(self, value):
+        self._stepableCoordsWhileChecked = value
+
+    @canMove.setter
+    def canMove(self, value):
+        self._canMove = value
+
     @x.setter
     def x(self, value):
         self._x = value
@@ -41,16 +58,19 @@ class Piece(ABC):
     def y(self, value):
         self._y = value
 
-    def _getCoords(self, directionX: int, directionY: int, maxMove: int):
+    def _getCoords(self, directionX: int, directionY: int, maxMove: int = None):
+        if maxMove is None:
+            maxMove = self._board.WIDTH if self._board.WIDTH > self._board.HEIGHT else self._board.HEIGHT
+            
         coords = []
         x = self._x + directionX
         y = self._y + directionY
         i = 0
-        while i < maxMove and self._chess.isValidCoordinate(x, y):
-            if self._chess.isTableCellEmpty(x, y):
+        while i < maxMove and self._board.isValidCoordinate(x, y):
+            if self._board.isTableCellEmpty(x, y):
                 coords.append((x, y))
             else:
-                if not self.isOwnedBySamePlayer(self._chess.getBoardPiece(x, y)):
+                if not self.isOwnedBySamePlayer(self._board.getBoardPiece(x, y)):
                     coords.append((x, y))
                 break
             y += directionY
@@ -60,6 +80,9 @@ class Piece(ABC):
         return coords
 
     def isMoveable(self, indexX: int, indexY: int) -> bool:
+        if not self._canMove:
+            return False
+        
         return (indexX, indexY) in self.getMoveablePositions()
     
     def isOwnedBySamePlayer(self, other: Piece):
@@ -68,6 +91,6 @@ class Piece(ABC):
     def hasSamePosition(self, indexX: int, indexY: int) -> bool:
         return self._x == indexX and self._y == indexY
 
-    @abstractmethod
     def getMoveablePositions(self) -> list[tuple[int, int]]:
-        pass
+        if not self._canMove:
+            return []

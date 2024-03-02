@@ -7,11 +7,12 @@ from enums import Players
 from piece.piece import Piece
 
 if TYPE_CHECKING:
-     from chess import Chess
+     from chess import Board
 
 class Pawn(Piece):
-    def __init__(self, chess: Chess, x: int, y: int, player: Players, image: pygame.Surface):
-        super().__init__(chess, x, y, player, image)
+    def __init__(self, board: Board, x: int, y: int, player: Players, image: pygame.Surface):
+        super().__init__(board, x, y, player, image)
+        self._isInTheOriginalField = True
         self.upCoords = []
         self.sideCoords = []
 
@@ -42,28 +43,30 @@ class Pawn(Piece):
         for x, y in self.upCoords:
             x += self._x
             y += self._y
-            if self._chess.isValidCoordinate(x,y) and self._chess.isTableCellEmpty(x,y):
+            if self._board.isValidCoordinate(x,y) and self._board.isTableCellEmpty(x,y):
                 coords.append((x,y))
+            else:
+                break
             
         for x, y in self.sideCoords:
             x += self._x
             y += self._y
-            if self._chess.isValidCoordinate(x,y) and not self._chess.isTableCellEmpty(x,y) \
-               and not self.isOwnedBySamePlayer(self._chess.getBoardPiece(x,y)):
+            if self._board.isValidCoordinate(x,y) and not self._board.isTableCellEmpty(x,y) \
+               and not self.isOwnedBySamePlayer(self._board.getBoardPiece(x,y)):
                 coords.append((x,y))
         
         return coords
 
 class BlackPawn(Pawn):
-    def __init__(self, chess: Chess, x: int, y: int, size: int):
+    def __init__(self, board: Board, x: int, y: int, size: int):
         image = pygame.transform.smoothscale(pygame.image.load(os.path.join("data", "black_pawn.svg")), (size, size))
-        super().__init__(chess, x, y, Players.BLACK, image)
+        super().__init__(board, x, y, Players.BLACK, image)
         self.upCoords = [(0, 1), (0, 2)]
         self.sideCoords = [(1, 1), (-1, 1)]
 
 class WhitePawn(Pawn):
-    def __init__(self, chess: Chess, x: int, y: int, size: int):
+    def __init__(self, board: Board, x: int, y: int, size: int):
         image = pygame.transform.smoothscale(pygame.image.load(os.path.join("data", "white_pawn.svg")), (size, size))
-        super().__init__(chess, x, y, Players.WHITE, image)
+        super().__init__(board, x, y, Players.WHITE, image)
         self.upCoords = [(0, -1), (0, -2)]
         self.sideCoords = [(1, -1), (-1, -1)]
