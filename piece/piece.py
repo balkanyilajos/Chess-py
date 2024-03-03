@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from abc import ABC
+from abc import ABC, abstractmethod
 import pygame
 
 from enums import Players
@@ -15,8 +15,7 @@ class Piece(ABC):
         self._y = y
         self._player = player
         self._image = image
-        self._canMove = True
-        self._stepableCoordsWhileChecked = []
+        self._moveablePositions = []
 
     @property
     def player(self) -> Players:
@@ -27,8 +26,8 @@ class Piece(ABC):
         return self._image
     
     @property
-    def canMove(self) -> bool:
-        return self._canMove
+    def moveablePositions(self) -> list[tuple[int, int]]:
+        return self._moveablePositions
 
     @property
     def x(self) -> int:
@@ -37,18 +36,10 @@ class Piece(ABC):
     @property 
     def y(self) -> int:
         return self._y
-    
-    @property
-    def stepableCoordsWhileChecked(self):
-        return self._stepableCoordsWhileChecked
-    
-    @stepableCoordsWhileChecked.setter
-    def stepableCoordsWhileChecked(self, value):
-        self._stepableCoordsWhileChecked = value
 
-    @canMove.setter
-    def canMove(self, value):
-        self._canMove = value
+    @moveablePositions.setter
+    def moveablePositions(self, value):
+        self._moveablePositions = value
 
     @x.setter
     def x(self, value):
@@ -58,7 +49,7 @@ class Piece(ABC):
     def y(self, value):
         self._y = value
 
-    def _getCoords(self, directionX: int, directionY: int, maxMove: int = None):
+    def _getCoords(self, directionX: int, directionY: int, maxMove: int = None) -> list[tuple[int, int]]:
         if maxMove is None:
             maxMove = self._board.WIDTH if self._board.WIDTH > self._board.HEIGHT else self._board.HEIGHT
             
@@ -79,11 +70,8 @@ class Piece(ABC):
 
         return coords
 
-    def isMoveable(self, indexX: int, indexY: int) -> bool:
-        if not self._canMove:
-            return False
-        
-        return (indexX, indexY) in self.getMoveablePositions()
+    def isMoveable(self, indexX: int, indexY: int, recalculate: bool = False) -> bool:        
+        return (indexX, indexY) in self.getMoveablePositions(recalculate=recalculate)
     
     def isOwnedBySamePlayer(self, other: Piece):
         return self._player == other._player 
@@ -91,6 +79,6 @@ class Piece(ABC):
     def hasSamePosition(self, indexX: int, indexY: int) -> bool:
         return self._x == indexX and self._y == indexY
 
-    def getMoveablePositions(self) -> list[tuple[int, int]]:
-        if not self._canMove:
-            return []
+    @abstractmethod
+    def getMoveablePositions(self, recalculate: bool = False) -> list[tuple[int, int]]:
+        pass

@@ -30,15 +30,21 @@ class Chess:
     def gameState(self) -> GameStates:
         return self._gameState
 
+    @property
+    def checkedKingCoord(self) -> tuple[int, int]:
+        if self._gameState == GameStates.CHECK or self._gameState == GameStates.CHECKMATE:
+            return self._kings[self._actualPlayer]
+        return None
+
     def _start(self):
         self._createPieces()
         self._kings = self._getKings()
+        self._setPieceMovability()
 
         while self._running:
             for event in pygame.event.get():
                 self._update(event)
             self._gui.refresh()
-            #print(self._gameState, self._winner)
         pygame.quit()
 
     def _update(self, event: pygame.event.Event):
@@ -52,7 +58,7 @@ class Chess:
 
             if not self._board.isTableCellEmpty(*coordinate):
                 piece = self._board.getBoardPiece(indexX, indexY)
-                if piece.canMove and self.isRoundOfCurrentPlayer(piece.player):
+                if len(piece.moveablePositions) != 0 and self.isRoundOfCurrentPlayer(piece.player):
                     self._gui.activePiece = self._board.deletePieceFromTable(*coordinate)
                     self._gui.showMousePiece = True
 
@@ -63,10 +69,10 @@ class Chess:
                     self._gui.showValidMoves = False
                     self._board.deletePieceFromTable(self._gui.activePiece.x, self._gui.activePiece.y)
                     self._board.addPieceToTable(self._gui.activePiece, x, y)
-                    self._setGameState()
-                    print(self._gameState, self._winner)
                     self._actualPlayer = Players.getNextPlayer(self._actualPlayer)
+                    self._setGameState()
                     self._setPieceMovability()
+                    #print(self._gameState, self._winner)
                 else:
                     if self._gui.activePiece.hasSamePosition(x, y):
                         self._gui.showValidMoves = not self._gui.showValidMoves
@@ -99,21 +105,22 @@ class Chess:
         return kings
 
     def _setGameState(self) -> GameStates:
-        nextKing: king.King = self._kings[Players.getNextPlayer(self._actualPlayer)]
+        actualKing: king.King = self._kings[self._actualPlayer]
         
-        if self._isCheck(nextKing):
+        if self._isCheck(actualKing):
             self._gameState = GameStates.CHECK
-            if self._isCheckMate(nextKing):
+            if self._isCheckMate(actualKing):
                 self._gameState = GameStates.CHECKMATE
                 self._winner = Players.getNextPlayer(self._actualPlayer) 
-        
-        if self._isStaleMate():
+        elif self._isStaleMate():
             self._gameState = GameStates.STALEMATE
+        else:
+            self._gameState = GameStates.NONE
         
     def _isCheck(self, kingPiece: king.King):
         for piece in self._board.getPieceGenerator():
             if not isinstance(piece, king.King) and not kingPiece.isOwnedBySamePlayer(piece) \
-                and piece.isMoveable(kingPiece.x, kingPiece.y):
+                and piece.isMoveable(kingPiece.x, kingPiece.y, recalculate=True):
                 return True
         
         return False
@@ -128,7 +135,7 @@ class Chess:
                 originalPieceX = piece.x
                 originalPieceY = piece.y
                 isInCheckMate = True
-                for x, y in piece.getMoveablePositions():
+                for x, y in piece.getMoveablePositions(recalculate=True):
                     deletedPiece = self._board.deletePieceFromTable(x, y)
                     self._board.addPieceToTable(piece, x, y, modifyCoordsInPiece=True)
 
@@ -145,40 +152,33 @@ class Chess:
 
     def _isStaleMate(self):
         for piece in self._board.getPieceGenerator():
-            if self.isRoundOfCurrentPlayer(piece.player) and piece.canMove:
-                return True
-        
-        return False
+            if self.isRoundOfCurrentPlayer(piece.player) and len(piece.moveablePositions) != 0:
+                return False
+
+        return True
 
     def _setPieceMovability(self):
         actualKing: king.King = self._kings[self._actualPlayer]
 
         for piece in self._board.getPieceGenerator():
             if not GameStates.isEndOfGame(self._gameState) and self.isRoundOfCurrentPlayer(piece.player):
-                if not isinstance(piece, king.King) and self._isCheck(actualKing):
+                if self._isCheck(actualKing):
                     self._board.deletePieceFromTable(piece.x, piece.y)
+                    pieceMoves = piece.getMoveablePositions(recalculate=True)
                     originalPieceX = piece.x
                     originalPieceY = piece.y
-                    pieceCanMove = False
-                    for x, y in piece.getMoveablePositions():
+                    for x, y in piece.getMoveablePositions(recalculate=True):
                         deletedPiece = self._board.deletePieceFromTable(x, y)
                         self._board.addPieceToTable(piece, x, y, modifyCoordsInPiece=True)
-                        pieceCanMove = not self._isCheck(actualKing)
+                        if self._isCheck(actualKing):
+                            pieceMoves.remove((x, y))
                         self._board.addPieceToTable(deletedPiece, x, y, modifyCoordsInPiece=False)
-                        if pieceCanMove:
-                            break
-                        
-                    self._board.addPieceToTable(piece, originalPieceX, originalPieceY, modifyCoordsInPiece=True)
-                    piece.canMove = pieceCanMove
-                else:
-                    piece.canMove = True                 
 
-    def _isStaleMate(self):
-        for piece in self._board.getPieceGenerator():
-            if self.isRoundOfCurrentPlayer(piece.player) and piece.canMove:
-                return False
-        
-        return True
+                    piece.moveablePositions = pieceMoves
+                    self._board.addPieceToTable(piece, originalPieceX, originalPieceY, modifyCoordsInPiece=True)
+                else:
+                    piece.getMoveablePositions(recalculate=True)
+
 
 class Board:
 
@@ -244,6 +244,7 @@ class GUI:
         self.validMoveSurface = pygame.Surface(screenSize, pygame.SRCALPHA)
         self.mouseSurface = pygame.Surface(screenSize, pygame.SRCALPHA)
 
+        self.isFlipScreenEnabled: bool = False
         self.showValidMoves: bool = False
         self.showMousePiece: bool = False
         self.activePiece: piece.Piece = None
@@ -269,7 +270,10 @@ class GUI:
         pygame.display.flip()
 
     def _createBackground(self):
-        player = self._chess.actualPlayer
+        if self.isFlipScreenEnabled:
+            player = self._chess.actualPlayer
+        else:
+            player = Players.WHITE
         for y in range(0, self.SCREEN_HEIGHT, self.CUBE_SIZE):
             for x in range (0, self.SCREEN_WIDTH, self.CUBE_SIZE):
                 color = self.CUBE_COLOR_1 if player == Players.WHITE else self.CUBE_COLOR_2
@@ -279,11 +283,17 @@ class GUI:
             player = Players.getNextPlayer(player)
 
     def _drawPieces(self):
-        iterator = range(self._board.HEIGHT) if self._chess.isRoundOfCurrentPlayer(Players.WHITE) else range(self._board.HEIGHT-1, -1, -1)
+        iterator = range(self._board.HEIGHT)
+        if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
+            iterator = range(self._board.HEIGHT-1, -1, -1)
+
         for y in iterator:
             for x in range(self._board.WIDTH):
                 if(not self._board.isTableCellEmpty(x, y)):
-                    ySize = y*self.CUBE_SIZE if self._chess.isRoundOfCurrentPlayer(Players.WHITE) else (self._board.HEIGHT-y-1)*self.CUBE_SIZE
+                    ySize = y*self.CUBE_SIZE
+                    if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
+                        ySize = (self._board.HEIGHT-y-1)*self.CUBE_SIZE
+                        
                     self.boardSurface.blit(self._board.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
 
     def _drawValidMoves(self, piece: piece.Piece):
@@ -297,16 +307,16 @@ class GUI:
         self.mouseSurface.blit(self.activePiece.image, (x - self.CUBE_SIZE / 2, y - self.CUBE_SIZE / 2))
 
     def getIndexFromCoordinate(self, x: float, y: float) -> tuple[int, int]:
-        if self._chess.isRoundOfCurrentPlayer(Players.WHITE):
-            yIndex = int(y / self.CUBE_SIZE)
-        else:
+        yIndex = int(y / self.CUBE_SIZE)
+        if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
             yIndex = self._board.HEIGHT - int(y / self.CUBE_SIZE) - 1
+            
         return (int(x / self.CUBE_SIZE), yIndex)
 
     def getCoordinatesFromIndex(self, indexX: int, indexY: int) -> tuple[float, float]:
-        if self._chess.isRoundOfCurrentPlayer(Players.WHITE):
-            y = indexY * self.CUBE_SIZE
-        else:
+        y = indexY * self.CUBE_SIZE
+        if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
             y = (self._board.HEIGHT-1 - indexY) * self.CUBE_SIZE
+
         return (indexX * self.CUBE_SIZE, y)
 

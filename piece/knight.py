@@ -13,8 +13,11 @@ class Knight(Piece):
     def __init__(self, board: Board, x: int, y: int, player: Players, image: pygame.Surface):
         super().__init__(board, x, y, player, image)
 
-    def getMoveablePositions(self) -> list[tuple[int, int]]:
-        coords = []
+    def getMoveablePositions(self, recalculate:bool = False) -> list[tuple[int, int]]:
+        if not recalculate:
+            return self._moveablePositions
+        
+        self._moveablePositions = coords = []
         directions = [(2,1), (-2,1), (2,-1), (-2,-1), (1,2), (1,-2), (-1,2), (-1,-2)]
         for x,y in directions:
             x += self._x

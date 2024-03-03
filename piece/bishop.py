@@ -13,8 +13,11 @@ class Bishop(Piece):
     def __init__(self, board: Board, x: int, y: int, player: Players, image: pygame.Surface):
         super().__init__(board, x, y, player, image)
 
-    def getMoveablePositions(self) -> list[tuple[int, int]]:
-        coords = self._getCoords(1, 1)
+    def getMoveablePositions(self, recalculate:bool = False) -> list[tuple[int, int]]:
+        if not recalculate:
+            return self._moveablePositions
+        
+        self._moveablePositions = coords = self._getCoords(1, 1)
         coords += self._getCoords(-1, -1)
         coords += self._getCoords(1, -1)
         coords += self._getCoords(-1, 1)

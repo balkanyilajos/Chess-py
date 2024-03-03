@@ -17,9 +17,14 @@ class King(Piece):
         return [(1+self._x, 0+self._y), (-1+self._x, 0+self._y), (0+self._x, 1+self._y), (0+self._x, -1+self._y),
                 (1+self._x, 1+self._y), (-1+self._x, -1+self._y), (1+self._x, -1+self._y), (-1+self._x, 1+self._y)]
 
-    def getMoveablePositions(self) -> list[tuple[int, int]]:
-        coords = self._getAdjacentCoords()
-        counter = 0
+    def getMoveablePositions(self, recalculate:bool = False) -> list[tuple[int, int]]:
+        if not recalculate:
+            return self._moveablePositions
+        
+        self._moveablePositions = coords = self._getAdjacentCoords()
+        originalX = self._x
+        originalY = self._y
+        original = self._board.deletePieceFromTable(originalX, originalY)
         for i in range(len(coords)-1, -1, -1):
             coord = coords[i]
             x, y = coord
@@ -53,15 +58,15 @@ class King(Piece):
                         if abs(piece.x-x) == 0 and abs(piece.y-y) == 0:
                             del coords[i]
                             break
-                    elif piece.isMoveable(x, y):
+                    elif piece.isMoveable(x, y, recalculate=True):
                         del coords[i]
                         break
-                        
+
             # removes kings from empty cells
             if isKingAddedToBoard:
                 self._board.deletePieceFromTable(x, y)
-                counter += 1
 
+        self._board.addPieceToTable(original, originalX, originalY, modifyCoordsInPiece=False)
         return coords
 
 class BlackKing(King):
