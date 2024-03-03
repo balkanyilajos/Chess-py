@@ -37,11 +37,11 @@ class King(Piece):
                     isKingAddedToBoard = True
                 elif not self.isOwnedBySamePlayer(self._board.getBoardPiece(x, y)):
                     deletedPiece = self._board.deletePieceFromTable(x, y)
-                    canMove = self.isMoveable(x, y)
+                    canMove = self.isMoveable(x, y, recalculate=True)
                     self._board.addPieceToTable(deletedPiece, x, y, modifyCoordsInPiece=False)
                     if not canMove:
                         del coords[i]
-                        continue
+                        break
             else:
                 del coords[i]
                 continue

@@ -215,9 +215,9 @@ class Board:
             self.board[indexY][indexX].y = indexY
 
     def getPieceGenerator(self) -> Generator[piece.Piece, None, None]:
-        for row in self.board:
-            for cell in row:
-                if isinstance(cell, piece.Piece):
+        for y, row in enumerate(self.board):
+            for x, cell in enumerate(row):
+                if not self.isTableCellEmpty(x, y):
                     yield cell
 
     def getBoardPiece(self, indexX, indexY) -> piece.Piece:
