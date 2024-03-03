@@ -33,7 +33,7 @@ class Chess:
     @property
     def checkedKingCoord(self) -> tuple[int, int]:
         if self._gameState == GameStates.CHECK or self._gameState == GameStates.CHECKMATE:
-            return self._kings[self._actualPlayer]
+            return (self._kings[self._actualPlayer].x, self._kings[self._actualPlayer].y)
         return None
 
     def _start(self):
@@ -228,6 +228,7 @@ class GUI:
     CUBE_COLOR_1 = pygame.Color(109, 82, 73, 255)
     CUBE_COLOR_2 = pygame.Color(248, 243, 227, 255)
     VALID_MOVE_COLOR = pygame.Color(158, 158, 158, 200)
+    CHECKED_COLOR = pygame.Color(158, 7, 9, 200)
     EMPTY_COLOR = pygame.Color(0, 0, 0, 0)
 
     def __init__(self, chess: Chess, board: Board):
@@ -254,14 +255,17 @@ class GUI:
         self.boardSurface.fill(self.EMPTY_COLOR)
         self.mouseSurface.fill(self.EMPTY_COLOR)
         if self.showValidMoves:
-            self._drawValidMoves(self.activePiece)
+            self._drawValidMoves(self.validMoveSurface, self.activePiece)
         else:
             self.validMoveSurface.fill(self.EMPTY_COLOR)
 
-        self._createBackground()
-        self._drawPieces()
+        self._createBackground(self.boardSurface)
+        if self._chess.checkedKingCoord is not None:
+            self._drawChecked(self.boardSurface)
+
+        self._drawPieces(self.boardSurface)
         if self.showMousePiece:
-            self._drawGrabbedByMousePiece()
+            self._drawGrabbedByMousePiece(self.mouseSurface)
 
         self.boardSurface.blit(self.validMoveSurface, (0, 0))
         self.boardSurface.blit(self.mouseSurface, (0, 0))
@@ -269,7 +273,7 @@ class GUI:
         pygame.display.update()
         pygame.display.flip()
 
-    def _createBackground(self):
+    def _createBackground(self, surface: pygame.Surface):
         if self.isFlipScreenEnabled:
             player = self._chess.actualPlayer
         else:
@@ -279,10 +283,10 @@ class GUI:
                 color = self.CUBE_COLOR_1 if player == Players.WHITE else self.CUBE_COLOR_2
                 player = Players.getNextPlayer(player)
 
-                pygame.draw.rect(self.boardSurface, color, (x, y, self.CUBE_SIZE, self.CUBE_SIZE))
+                pygame.draw.rect(surface, color, (x, y, self.CUBE_SIZE, self.CUBE_SIZE))
             player = Players.getNextPlayer(player)
 
-    def _drawPieces(self):
+    def _drawPieces(self, surface: pygame.Surface):
         iterator = range(self._board.HEIGHT)
         if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
             iterator = range(self._board.HEIGHT-1, -1, -1)
@@ -293,18 +297,26 @@ class GUI:
                     ySize = y*self.CUBE_SIZE
                     if self.isFlipScreenEnabled and not self._chess.isRoundOfCurrentPlayer(Players.WHITE):
                         ySize = (self._board.HEIGHT-y-1)*self.CUBE_SIZE
-                        
-                    self.boardSurface.blit(self._board.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
+ 
+                    surface.blit(self._board.getBoardPiece(x, y).image, (x*self.CUBE_SIZE, ySize))
 
-    def _drawValidMoves(self, piece: piece.Piece):
+    def _drawChecked(self, surface: pygame.Surface):
+        if self._chess.checkedKingCoord is not None:
+            x, y = self._chess.checkedKingCoord
+            x = x*self.CUBE_SIZE+self.CUBE_SIZE/2
+            y = ((self._board.HEIGHT-y-1) if self.isFlipScreenEnabled else y)*self.CUBE_SIZE+self.CUBE_SIZE/2
+
+            pygame.draw.circle(surface, self.CHECKED_COLOR, center=(x, y), radius=self.CUBE_SIZE/2)
+
+    def _drawValidMoves(self, surface: pygame.Surface, piece: piece.Piece):
         points = piece.getMoveablePositions()
         for point in points:
             x, y = self.getCoordinatesFromIndex(*point)
-            pygame.draw.rect(self.validMoveSurface, self.VALID_MOVE_COLOR, (x, y, self.CUBE_SIZE, self.CUBE_SIZE))
+            pygame.draw.rect(surface, self.VALID_MOVE_COLOR, (x, y, self.CUBE_SIZE, self.CUBE_SIZE))
 
-    def _drawGrabbedByMousePiece(self):
+    def _drawGrabbedByMousePiece(self, surface: pygame.Surface):
         x, y = pygame.mouse.get_pos()
-        self.mouseSurface.blit(self.activePiece.image, (x - self.CUBE_SIZE / 2, y - self.CUBE_SIZE / 2))
+        surface.blit(self.activePiece.image, (x - self.CUBE_SIZE / 2, y - self.CUBE_SIZE / 2))
 
     def getIndexFromCoordinate(self, x: float, y: float) -> tuple[int, int]:
         yIndex = int(y / self.CUBE_SIZE)
