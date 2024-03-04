@@ -16,38 +16,24 @@ class Pawn(Piece):
         self._enPassant = False
         self._enPassantCoords = []
 
+        self._originalX = self._x
+        self._originalY = self._y
+        
         self._upCoord = (0, 0)
         self._leftCoord = (0, 0)
         self._rightCoord = (0, 0)
         self._downCoord = (0, 0)
 
-    @property
-    def x(self) -> int:
-        return self._x
-    
-    @property 
-    def y(self) -> int:
-        return self._y
-    
-    @x.setter
-    def x(self, value):
-        self._enPassant = False
-        if self._isInTheOriginalField and self._x != value:
-             self._enPassant = True
-             self._isInTheOriginalField = False
-        self._x = value
-        if (self._x, self._y) in self._enPassantCoords:
-            self._board.deletePieceFromTable(self._x-self._downCoord[0], self._y-self._downCoord[1])
-    
-    @y.setter
-    def y(self, value):
-        self._enPassant = False
-        if self._isInTheOriginalField and self._y != value:
-             self._enPassant = True
-             self._isInTheOriginalField = False
-        self._y = value
-        if (self._x, self._y) in self._enPassantCoords:
-            self._board.deletePieceFromTable(self._x-self._downCoord[0], self._y-self._downCoord[1])
+    def move(self, indexX: int, indexY: int, recalculate: bool = False, testMove: bool = False):
+        if not testMove:
+            if self._isInTheOriginalField and (self._x != indexX or self._y != indexY):
+                self._enPassant = True
+                self._isInTheOriginalField = False
+
+            if (self._x, self._y) in self._enPassantCoords:
+                self._board.deletePieceFromTable(self._x-self._downCoord[0], self._y-self._downCoord[1])
+
+        super().move(indexX, indexY, recalculate)
 
     def getMoveablePositions(self, recalculate:bool = False) -> list[tuple[int, int]]:
         if not recalculate:

@@ -37,18 +37,6 @@ class Piece(ABC):
     def y(self) -> int:
         return self._y
 
-    @moveablePositions.setter
-    def moveablePositions(self, value):
-        self._moveablePositions = value
-
-    @x.setter
-    def x(self, value):
-        self._x = value
-    
-    @y.setter
-    def y(self, value):
-        self._y = value
-
     def _getCoords(self, directionX: int, directionY: int, maxMove: int = None) -> list[tuple[int, int]]:
         if maxMove is None:
             maxMove = self._board.WIDTH if self._board.WIDTH > self._board.HEIGHT else self._board.HEIGHT
@@ -73,6 +61,10 @@ class Piece(ABC):
     def isMoveable(self, indexX: int, indexY: int, recalculate: bool = False) -> bool:        
         return (indexX, indexY) in self.getMoveablePositions(recalculate=recalculate)
     
+    def move(self, indexX: int, indexY: int, testMove: bool = False):
+        self._x = indexX
+        self._y = indexY
+
     def isOwnedBySamePlayer(self, other: Piece):
         return self._player == other._player 
 
@@ -82,3 +74,6 @@ class Piece(ABC):
     @abstractmethod
     def getMoveablePositions(self, recalculate: bool = False) -> list[tuple[int, int]]:
         pass
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__

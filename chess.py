@@ -1,6 +1,7 @@
 from win32api import GetSystemMetrics
 from typing import Generator
 import pygame
+import pyautogui
 from enums import Players, GameStates
 from piece import *
 
@@ -88,10 +89,10 @@ class Chess:
                               queen.WhiteQueen, bishop.WhiteBishop, knight.WhiteKnight, rook.WhiteRook]
 
         for i in range(self._board.WIDTH):
-            self._board.addPieceToTable(blackSpecialPieces[i](self._board, i, 0, self._gui.CUBE_SIZE), modifyCoordsInPiece=False)
-            self._board.addPieceToTable(pawn.BlackPawn(self._board, i, 1, self._gui.CUBE_SIZE), modifyCoordsInPiece=False)
-            self._board.addPieceToTable(pawn.WhitePawn(self._board, i, self._board.HEIGHT-2, self._gui.CUBE_SIZE), modifyCoordsInPiece=False) 
-            self._board.addPieceToTable(whiteSpecialPieces[i](self._board, i, self._board.HEIGHT-1, self._gui.CUBE_SIZE), modifyCoordsInPiece=False)
+            self._board.addPieceToTable(blackSpecialPieces[i](self._board, i, 0, self._gui.CUBE_SIZE))
+            self._board.addPieceToTable(pawn.BlackPawn(self._board, i, 1, self._gui.CUBE_SIZE))
+            self._board.addPieceToTable(pawn.WhitePawn(self._board, i, self._board.HEIGHT-2, self._gui.CUBE_SIZE)) 
+            self._board.addPieceToTable(whiteSpecialPieces[i](self._board, i, self._board.HEIGHT-1, self._gui.CUBE_SIZE))
 
     def isRoundOfCurrentPlayer(self, otherPlayer: Players):
         return otherPlayer == self._actualPlayer
@@ -137,14 +138,14 @@ class Chess:
                 isInCheckMate = True
                 for x, y in piece.getMoveablePositions(recalculate=True):
                     deletedPiece = self._board.deletePieceFromTable(x, y)
-                    self._board.addPieceToTable(piece, x, y, modifyCoordsInPiece=True)
+                    self._board.addPieceToTable(piece, x, y, testMove=True)
 
                     isInCheckMate = self._isCheck(kingPiece)
-                    self._board.addPieceToTable(deletedPiece, x, y, modifyCoordsInPiece=False)
+                    self._board.addPieceToTable(deletedPiece, x, y, testMove=True)
                     if not isInCheckMate:
                         break
                 
-                self._board.addPieceToTable(piece, originalPieceX, originalPieceY, modifyCoordsInPiece=True)
+                self._board.addPieceToTable(piece, originalPieceX, originalPieceY, testMove=True)
                 if not isInCheckMate:
                     return False
         
@@ -167,17 +168,18 @@ class Chess:
                     pieceMoves = piece.getMoveablePositions(recalculate=True)
                     originalPieceX = piece.x
                     originalPieceY = piece.y
-                    for x, y in piece.getMoveablePositions(recalculate=True):
+                    for x, y in pieceMoves:
                         deletedPiece = self._board.deletePieceFromTable(x, y)
-                        self._board.addPieceToTable(piece, x, y, modifyCoordsInPiece=True)
+                        self._board.addPieceToTable(piece, x, y, testMove=True)
                         if self._isCheck(actualKing):
                             pieceMoves.remove((x, y))
-                        self._board.addPieceToTable(deletedPiece, x, y, modifyCoordsInPiece=False)
+                        self._board.addPieceToTable(deletedPiece, x, y, testMove=True)
 
-                    piece.moveablePositions = pieceMoves
-                    self._board.addPieceToTable(piece, originalPieceX, originalPieceY, modifyCoordsInPiece=True)
+                    self._board.addPieceToTable(piece, originalPieceX, originalPieceY, testMove=True)
                 else:
                     piece.getMoveablePositions(recalculate=True)
+            else:
+                piece.moveablePositions.clear()
 
 
 class Board:
@@ -186,7 +188,7 @@ class Board:
         self.WIDTH = width
         self.HEIGHT = height
         self._emptyCell = None
-        self.board: piece.Piece = [[self._emptyCell for x in range(width)] \
+        self._board: piece.Piece = [[self._emptyCell for x in range(width)] \
                                      for y in range(height)]
 
     @property
@@ -202,26 +204,28 @@ class Board:
 
     def deletePieceFromTable(self, indexX: int, indexY: int) -> piece.Piece:
         temp = self.getBoardPiece(indexX, indexY)
-        self.board[indexY][indexX] = self._emptyCell
+        self._board[indexY][indexX] = self._emptyCell
         return temp
 
-    def addPieceToTable(self, piece: piece.Piece, indexX: int = None, indexY: int = None, modifyCoordsInPiece: bool = True):
+    def addPieceToTable(self, piece: piece.Piece, indexX: int = None, indexY: int = None, testMove: bool = False):
         if indexX == None or indexY == None:
             indexX = piece.x
             indexY = piece.y
-        self.board[indexY][indexX] = piece
-        if modifyCoordsInPiece:
-            self.board[indexY][indexX].x = indexX
-            self.board[indexY][indexX].y = indexY
+        self._board[indexY][indexX] = piece
+        if piece != None:
+            piece.move(indexX, indexY, testMove=testMove)
 
     def getPieceGenerator(self) -> Generator[piece.Piece, None, None]:
-        for y, row in enumerate(self.board):
+        for y, row in enumerate(self._board):
             for x, cell in enumerate(row):
                 if not self.isTableCellEmpty(x, y):
                     yield cell
 
     def getBoardPiece(self, indexX, indexY) -> piece.Piece:
-        return self.board[indexY][indexX]
+        return self._board[indexY][indexX]
+
+    def __repr__(self) -> str:
+            return "\n".join(" ".join(repr(col) for col in row) for row in self._board)
 
 
 class GUI:
@@ -249,6 +253,7 @@ class GUI:
         self.showValidMoves: bool = False
         self.showMousePiece: bool = False
         self.activePiece: piece.Piece = None
+        self.showMessageBox: bool = True
 
     def refresh(self):
         self.screen.fill(self.EMPTY_COLOR)
@@ -260,12 +265,26 @@ class GUI:
             self.validMoveSurface.fill(self.EMPTY_COLOR)
 
         self._createBackground(self.boardSurface)
-        if self._chess.checkedKingCoord is not None:
-            self._drawChecked(self.boardSurface)
-
+        if self._chess.checkedKingCoord is not None \
+           and not self._board.isTableCellEmpty(*self._chess.checkedKingCoord) \
+           and self._chess.checkedKingCoord is not None:
+                self._drawChecked(self.boardSurface)
+        
         self._drawPieces(self.boardSurface)
         if self.showMousePiece:
             self._drawGrabbedByMousePiece(self.mouseSurface)
+
+        if GameStates.isEndOfGame(self._chess.gameState) and self.showMessageBox:
+            self.showMessageBox = False
+            if self._chess.gameState == GameStates.STALEMATE:
+                pyautogui.alert("Nobody won!")
+            else:
+                if self._chess.winner == Players.WHITE:
+                    winner = "white"
+                elif self._chess.winner == Players.BLACK:
+                    winner = "black"
+
+                pyautogui.alert(f"The winner is {winner}")
 
         self.boardSurface.blit(self.validMoveSurface, (0, 0))
         self.boardSurface.blit(self.mouseSurface, (0, 0))
