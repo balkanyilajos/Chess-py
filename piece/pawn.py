@@ -30,9 +30,9 @@ class Pawn(Piece):
                 self._enPassant = True
                 self._isInTheOriginalField = False
 
-            if (self._x, self._y) in self._enPassantCoords:
-                self._board.deletePieceFromTable(self._x-self._downCoord[0], self._y-self._downCoord[1])
-
+            if (indexX, indexY) in self._enPassantCoords:
+                self._board.deletePieceFromTable(indexX-self._downCoord[0], indexY-self._downCoord[1])
+                
         super().move(indexX, indexY, recalculate)
 
     def getMoveablePositions(self, recalculate:bool = False) -> list[tuple[int, int]]:

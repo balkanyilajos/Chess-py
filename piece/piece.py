@@ -37,6 +37,10 @@ class Piece(ABC):
     def y(self) -> int:
         return self._y
 
+    @moveablePositions.setter
+    def moveablePositions(self, value):
+        self._moveablePositions = value
+
     def _getCoords(self, directionX: int, directionY: int, maxMove: int = None) -> list[tuple[int, int]]:
         if maxMove is None:
             maxMove = self._board.WIDTH if self._board.WIDTH > self._board.HEIGHT else self._board.HEIGHT

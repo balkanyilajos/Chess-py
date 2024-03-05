@@ -71,9 +71,9 @@ class Chess:
                     self._board.deletePieceFromTable(self._gui.activePiece.x, self._gui.activePiece.y)
                     self._board.addPieceToTable(self._gui.activePiece, x, y)
                     self._actualPlayer = Players.getNextPlayer(self._actualPlayer)
-                    self._setGameState()
                     self._setPieceMovability()
-                    #print(self._gameState, self._winner)
+                    self._setGameState()
+                    print(self._gameState, self._winner)
                 else:
                     if self._gui.activePiece.hasSamePosition(x, y):
                         self._gui.showValidMoves = not self._gui.showValidMoves
@@ -165,16 +165,17 @@ class Chess:
             if not GameStates.isEndOfGame(self._gameState) and self.isRoundOfCurrentPlayer(piece.player):
                 if self._isCheck(actualKing):
                     self._board.deletePieceFromTable(piece.x, piece.y)
-                    pieceMoves = piece.getMoveablePositions(recalculate=True)
+                    pieceMoves = piece.getMoveablePositions(recalculate=True).copy()
+                    #print(pieceMoves)
                     originalPieceX = piece.x
                     originalPieceY = piece.y
-                    for x, y in pieceMoves:
+                    for x, y in reversed(pieceMoves):
                         deletedPiece = self._board.deletePieceFromTable(x, y)
                         self._board.addPieceToTable(piece, x, y, testMove=True)
                         if self._isCheck(actualKing):
                             pieceMoves.remove((x, y))
                         self._board.addPieceToTable(deletedPiece, x, y, testMove=True)
-
+                    piece.moveablePositions = pieceMoves
                     self._board.addPieceToTable(piece, originalPieceX, originalPieceY, testMove=True)
                 else:
                     piece.getMoveablePositions(recalculate=True)
@@ -274,17 +275,17 @@ class GUI:
         if self.showMousePiece:
             self._drawGrabbedByMousePiece(self.mouseSurface)
 
-        if GameStates.isEndOfGame(self._chess.gameState) and self.showMessageBox:
-            self.showMessageBox = False
-            if self._chess.gameState == GameStates.STALEMATE:
-                pyautogui.alert("Nobody won!")
-            else:
-                if self._chess.winner == Players.WHITE:
-                    winner = "white"
-                elif self._chess.winner == Players.BLACK:
-                    winner = "black"
+        # if GameStates.isEndOfGame(self._chess.gameState) and self.showMessageBox:
+        #     self.showMessageBox = False
+        #     if self._chess.gameState == GameStates.STALEMATE:
+        #         pyautogui.alert("Nobody won!")
+        #     else:
+        #         if self._chess.winner == Players.WHITE:
+        #             winner = "white"
+        #         elif self._chess.winner == Players.BLACK:
+        #             winner = "black"
 
-                pyautogui.alert(f"The winner is {winner}")
+        #         pyautogui.alert(f"The winner is {winner}")
 
         self.boardSurface.blit(self.validMoveSurface, (0, 0))
         self.boardSurface.blit(self.mouseSurface, (0, 0))
