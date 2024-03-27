@@ -71,8 +71,8 @@ class Chess:
                     self._board.deletePieceFromTable(self._gui.activePiece.x, self._gui.activePiece.y)
                     self._board.addPieceToTable(self._gui.activePiece, x, y)
                     self._actualPlayer = Players.getNextPlayer(self._actualPlayer)
-                    self._setPieceMovability()
                     self._setGameState()
+                    self._setPieceMovability()
                     print(self._gameState, self._winner)
                 else:
                     if self._gui.activePiece.hasSamePosition(x, y):
@@ -83,10 +83,10 @@ class Chess:
 
     def _createPieces(self):
 
-        blackSpecialPieces = [rook.BlackRook, knight.BlackKnight, bishop.BlackBishop, king.BlackKing, \
-                              queen.BlackQueen, bishop.BlackBishop, knight.BlackKnight, rook.BlackRook]
-        whiteSpecialPieces = [rook.WhiteRook, knight.WhiteKnight, bishop.WhiteBishop, king.WhiteKing, \
-                              queen.WhiteQueen, bishop.WhiteBishop, knight.WhiteKnight, rook.WhiteRook]
+        blackSpecialPieces = [rook.BlackRook, knight.BlackKnight, bishop.BlackBishop, queen.BlackQueen, \
+                              king.BlackKing, bishop.BlackBishop, knight.BlackKnight, rook.BlackRook]
+        whiteSpecialPieces = [rook.WhiteRook, knight.WhiteKnight, bishop.WhiteBishop, queen.WhiteQueen, \
+                              king.WhiteKing, bishop.WhiteBishop, knight.WhiteKnight, rook.WhiteRook]
 
         for i in range(self._board.WIDTH):
             self._board.addPieceToTable(blackSpecialPieces[i](self._board, i, 0, self._gui.CUBE_SIZE))
@@ -166,7 +166,6 @@ class Chess:
                 if self._isCheck(actualKing):
                     self._board.deletePieceFromTable(piece.x, piece.y)
                     pieceMoves = piece.getMoveablePositions(recalculate=True).copy()
-                    #print(pieceMoves)
                     originalPieceX = piece.x
                     originalPieceY = piece.y
                     for x, y in reversed(pieceMoves):
@@ -230,8 +229,8 @@ class Board:
 
 
 class GUI:
-    CUBE_COLOR_1 = pygame.Color(109, 82, 73, 255)
-    CUBE_COLOR_2 = pygame.Color(248, 243, 227, 255)
+    CUBE_COLOR_1 = pygame.Color(248, 243, 227, 255)
+    CUBE_COLOR_2 = pygame.Color(109, 82, 73, 255)
     VALID_MOVE_COLOR = pygame.Color(158, 158, 158, 200)
     CHECKED_COLOR = pygame.Color(158, 7, 9, 200)
     EMPTY_COLOR = pygame.Color(0, 0, 0, 0)
@@ -275,17 +274,17 @@ class GUI:
         if self.showMousePiece:
             self._drawGrabbedByMousePiece(self.mouseSurface)
 
-        # if GameStates.isEndOfGame(self._chess.gameState) and self.showMessageBox:
-        #     self.showMessageBox = False
-        #     if self._chess.gameState == GameStates.STALEMATE:
-        #         pyautogui.alert("Nobody won!")
-        #     else:
-        #         if self._chess.winner == Players.WHITE:
-        #             winner = "white"
-        #         elif self._chess.winner == Players.BLACK:
-        #             winner = "black"
+        if GameStates.isEndOfGame(self._chess.gameState) and self.showMessageBox:
+            self.showMessageBox = False
+            if self._chess.gameState == GameStates.STALEMATE:
+                pyautogui.alert("Nobody won!")
+            else:
+                if self._chess.winner == Players.WHITE:
+                    winner = "white"
+                elif self._chess.winner == Players.BLACK:
+                    winner = "black"
 
-        #         pyautogui.alert(f"The winner is {winner}")
+                pyautogui.alert(f"The winner is {winner}")
 
         self.boardSurface.blit(self.validMoveSurface, (0, 0))
         self.boardSurface.blit(self.mouseSurface, (0, 0))
